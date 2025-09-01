@@ -1,0 +1,454 @@
+{
+  "name": "News n8n workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1232,
+        -96
+      ],
+      "id": "9407d082-cb22-4b68-8419-9d714d6083b8",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1232,
+        176
+      ],
+      "id": "ba3d3ac9-fc01-49d9-8d9f-f09dd7305375",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "=https://gnews.io/api/v4/search?q=drone+latest+news&apikey=977fdbb182841e81365b3839dd23784e",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -848,
+        -192
+      ],
+      "id": "cb777ab8-f0cd-407b-a6c9-09e4b8797ef3",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = [];\n\nconst articles = $input.all().map(item => item.json.articleText || \"\");\n\n// Filter only English-looking articles (A–Z characters)\nconst englishArticles = articles.filter(a => /[a-zA-Z]/.test(a) && !/^[Α-Ωα-ω]/.test(a));\n\n// Get the 2nd English article\nconst secondEnglish = englishArticles.length > 1 ? englishArticles[1] : englishArticles[0] || null;\n\nresults.push({\n  json: {\n    articleText: secondEnglish\n  }\n});\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        -160
+      ],
+      "id": "c7b5bbef-13a5-4ffa-b1c8-dae38326849d",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.together.xyz/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer tgp_v1_LnfiNd02b4bopWMJRwV8yv7IccGE-3NL7ijPuDvvbmU"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a helpful assistant that creates social media-ready captions. Provide a hook line, a 2–3 sentence summary, and 5 relevant hashtags.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"{{ $json.articleText }}\"\n    }\n  ],\n  \"max_tokens\": 200,\n  \"temperature\": 0.7\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        96,
+        -160
+      ],
+      "id": "a7aad2be-1e1d-442d-9fdb-40dbe01fdc48",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.link }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -416,
+        -160
+      ],
+      "id": "7835cf67-dd5b-4f94-8d8a-b9a748c7b4a6",
+      "name": "HTTP Request3"
+    },
+    {
+      "parameters": {
+        "url": "https://gnews.io/api/v4/search?q=UAV+technology&apikey=977fdbb182841e81365b3839dd23784e",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -848,
+        48
+      ],
+      "id": "a83627cc-e489-4a8b-8128-9e4005647495",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "url": "https://gnews.io/api/v4/search?q=DGCA+drones+India&apikey=977fdbb182841e81365b3839dd23784e",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -848,
+        288
+      ],
+      "id": "55930e6b-2008-4326-b7ce-0621087aa440",
+      "name": "HTTP Request4",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over all incoming items\nconst output = [];\n\nfor (const item of $input.all()) {\n    // Safe extraction of assistant content\n    const content = item.json?.choices?.[0]?.message?.content ?? \"\";\n\n    // Push as new item to output\n    output.push({\n        json: {\n            content: content\n        }\n    });\n}\n\n// Return array of items\nreturn output;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        288,
+        -160
+      ],
+      "id": "f7946570-1cd1-4b19-ad65-9f48968a4c00",
+      "name": "Code4"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.image }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -208,
+        128
+      ],
+      "id": "26151c9e-4343-476c-998d-6a3e639f3237",
+      "name": "HTTP Request5"
+    },
+    {
+      "parameters": {
+        "jsCode": "const allInputs = $input.all(); // all incoming items\n\n// Assumptions about order:\n// 0 → Article metadata (JSON)\n// 1 → HTTP Request (binary image)\n// 2 → AI summary (JSON)\n\n// extract items safely\nconst articleItem = allInputs[0]?.json || {};\nconst imageItem = allInputs[1]?.binary || null; // could be empty\nconst aiItem = allInputs[2]?.json || {};\n\nconst merged = [];\n\n// only proceed if article exists\nif (articleItem && Object.keys(articleItem).length > 0) {\n    // parse AI content safely\n    const aiContent = aiItem?.content || \"\";\n\n    const hookLineMatch = aiContent.match(/\\*\\*Hook Line:\\*\\*\\s*\"([^\"]+)\"/i);\n    const summaryMatch = aiContent.match(/\\*\\*Summary:\\*\\*\\s*([\\s\\S]*?)(?:\\n\\s*\\*\\*Relevant Hashtags:\\*\\*|$)/i);\n    const hashtagsMatch = aiContent.match(/\\*\\*Relevant Hashtags:\\*\\*\\s*([\\s\\S]*)/i);\n\n    const hookLine = hookLineMatch ? hookLineMatch[1] : \"\";\n    const summary = summaryMatch ? summaryMatch[1].trim() : \"\";\n    const hashtags = hashtagsMatch ? hashtagsMatch[1]\n                                .split(/\\r?\\n/)\n                                .map(s => s.replace(/^\\d+\\.\\s*/, \"\").trim())\n                                .filter(Boolean) : [];\n\n    merged.push({\n        json: {\n            title: articleItem?.title || \"\",\n            link: articleItem?.link || \"\",\n            content: articleItem?.content || \"\",\n            hookLine,\n            summary,\n            hashtags\n        },\n        binary: {\n            image: imageItem?.image || null // only include if exists\n        }\n    });\n}\n\nreturn merged;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        224
+      ],
+      "id": "c0b16547-479f-40d8-a5d2-ab1e8be26382",
+      "name": "Code5"
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "binaryPropertyName": "Final Output",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        464,
+        224
+      ],
+      "id": "eb02090e-9c46-4dec-a94b-e65b7006ff2e",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = [];\n\nconst articles = $json.articles || [];\n\nfor (const article of articles) {\n  results.push({\n    json: {\n      title: article.title,\n      link: article.url,\n      image: article.image,\n      content: article.content\n    }\n  });\n}\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        48
+      ],
+      "id": "ab4593eb-a83e-423c-a386-4bae7d93a9d0",
+      "name": "Post Metadata Extractor"
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = [];\nfor (const item of $input.all()) {\n  results.push({\n    json: {\n      title: $input.first().json.title,\n      link: $input.first().json.link,\n      image: $input.first().json.image,\n      content: $input.first().json.content\n    }\n  });\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        384
+      ],
+      "id": "baae1aed-e3a8-40d8-934f-87976d29469c",
+      "name": "Image Extractor"
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "# # Loop over input items and add a new field called 'myNewField' to the JSON of each one\n# import requests\n# import json\n\n# # Load your merged JSON (from n8n output file)\n# with open(\"file.json\", \"r\", encoding=\"utf-8\") as f:\n#     data = json.load(f)\n\n# post = data[0][\"json\"]\n# image_binary = data[0][\"binary\"][\"data\"]  # may need base64 decode\n\n# # Your Instagram API credentials\n# ACCESS_TOKEN = \"YOUR_LONG_LIVED_ACCESS_TOKEN\"\n# IG_USER_ID = \"YOUR_IG_USER_ID\"\n\n# # Step 1: Upload image (must be hosted or base64 -> temp URL)\n# # Simpler way: Save file locally\n# with open(\"post_image.jpg\", \"wb\") as img_file:\n#     img_file.write(bytes(image_binary, \"latin1\"))  # adjust encoding\n\n# # Step 2: Upload media to IG\n# image_url = \"https://yourdomain.com/post_image.jpg\"  # IG needs public URL\n# caption = f\"{post['hookLine']}\\n\\n{post['summary']}\\n\\n{' '.join(post['hashtags'])}\"\n\n# create_url = f\"https://graph.facebook.com/v20.0/{IG_USER_ID}/media\"\n# payload = {\n#     \"image_url\": image_url,\n#     \"caption\": caption,\n#     \"access_token\": ACCESS_TOKEN\n# }\n# res = requests.post(create_url, data=payload).json()\n# print(\"Upload Response:\", res)\n\n# # Step 3: Publish post\n# if \"id\" in res:\n#     publish_url = f\"https://graph.facebook.com/v20.0/{IG_USER_ID}/media_publish\"\n#     publish_payload = {\n#         \"creation_id\": res[\"id\"],\n#         \"access_token\": ACCESS_TOKEN\n#     }\n#     publish_res = requests.post(publish_url, data=publish_payload).json()\n#     print(\"Publish Response:\", publish_res)\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        448
+      ],
+      "id": "b30fe381-4abd-4bd5-b31c-29c0f32f46ef",
+      "name": "Social Media Posting",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = [];\n\nfor (const item of $input.all()) {\n  const html = item.json.data || \"\";\n\n  // 1. Remove <script> and <style> blocks\n  let cleanHtml = html.replace(/<script[\\s\\S]*?>[\\s\\S]*?<\\/script>/gi, '');\n  cleanHtml = cleanHtml.replace(/<style[\\s\\S]*?>[\\s\\S]*?<\\/style>/gi, '');\n\n  // 2. Extract only text inside <p> tags (common for article bodies)\n  const matches = cleanHtml.match(/<p[^>]*>(.*?)<\\/p>/gi);\n\n  let textContent = \"\";\n  if (matches) {\n    textContent = matches\n      .map(p => p.replace(/<[^>]+>/g, '').trim()) // strip tags inside <p>\n      .filter(t => t.length > 0)\n      .join(\" \");\n  }\n\n  // 3. Fallback: if <p> not found, strip all tags\n  if (!textContent) {\n    textContent = cleanHtml.replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim();\n  }\n\n  results.push({\n    json: {\n      articleText: textContent\n    }\n  });\n}\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -256,
+        -160
+      ],
+      "id": "43c624f8-b793-4584-9691-ca92a9d88269",
+      "name": "Text Extractor"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Post Metadata Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Code4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request3": {
+      "main": [
+        [
+          {
+            "node": "Text Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Post Metadata Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request4": {
+      "main": [
+        [
+          {
+            "node": "Post Metadata Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code4": {
+      "main": [
+        [
+          {
+            "node": "Code5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request5": {
+      "main": [
+        [
+          {
+            "node": "Code5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code5": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Social Media Posting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Metadata Extractor": {
+      "main": [
+        [
+          {
+            "node": "Image Extractor",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image Extractor": {
+      "main": [
+        [
+          {
+            "node": "Code5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Extractor": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2f9b31fa-3ebd-4ca3-8e70-5d8dc8401c9f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2da71e75fff674381538527ffb91794be3ed192caceb490af484fe4ac0ead3b6"
+  },
+  "id": "xLtit7wNfu8HZGXL",
+  "tags": []
+}
